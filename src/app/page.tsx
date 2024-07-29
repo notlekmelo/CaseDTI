@@ -1,95 +1,123 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import { Produto } from "./interfaces/produtos";
+import { Navbar } from  "./components/navbar";
 import styles from "./page.module.css";
+import formatarValor from "./functions/formatarValor";
+import "./globals.css"; 
 
 export default function Home() {
+  const [tipoDesconto, setTipoDesconto] = useState("P");
+  const [valorDesconto, setValorDesconto] = useState(0);
+  const [produtos, setProdutos] = useState<Produto[]>([
+    { descricao: "Echo dot", quantidade: 1, valor: 250.0 },
+    { descricao: "Memória RAM 8GB", quantidade: 2, valor: 326.9 },
+    { descricao: "Lâmpada inteligente", quantidade: 5, valor: 58.0 },
+  ]);
+
+  let resultado = 0;
+
+  function handleSubmit(data: FormData) {
+    const valor = Number(data.get("ValorDesconto") || 0);
+    setValorDesconto(valor);
+  }
+
+  function exibirProdutos() {
+    let percentualDesconto = 0;
+    if (tipoDesconto == "P") {
+      percentualDesconto = valorDesconto / 100;
+    } else {
+      const soma = 0;
+      const somaTotalSemDesconto = produtos
+        .map((produto) => produto.valor * produto.quantidade)
+        .reduce((somaProdutos, valorFinal) => somaProdutos + valorFinal, soma);
+      percentualDesconto = valorDesconto > somaTotalSemDesconto ? 1 : valorDesconto / somaTotalSemDesconto;
+    }
+    resultado = 0;
+    const response = produtos.map((produto, index) => {
+      const produtoSemDesconto = produto.quantidade * produto.valor;
+      let descontoProduto = produtoSemDesconto * percentualDesconto;
+      let produtoComDesconto = produtoSemDesconto - descontoProduto;
+      resultado += produtoComDesconto;
+      return (
+        <tr key={index}>
+          <td>{produto.descricao}</td>
+          <td>{produto.quantidade}</td>
+          <td>{formatarValor(produto.valor)}</td>
+          <td>{formatarValor(descontoProduto)}</td>
+          <td>{formatarValor(produtoComDesconto)}</td>
+        </tr>
+      );
+    });
+    return response;
+  }
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
+    <>
+      <Navbar />
+      <main className={styles.main}>
+
+        <form action={handleSubmit}>
+          <div>
+            <label>Desconto: </label> 
+          </div>
+          <div className={styles.row}>
+            <input
+              className={styles.input}
+              type="number"
+              name="ValorDesconto"
+              min="0"
+              max={tipoDesconto == "P" ? 100 : undefined}
+              step=".01"
             />
-          </a>
-        </div>
-      </div>
+            <div className={styles.radioButton}>
+              <input
+                type="radio"
+                name="TipoDesconto"
+                value="P"
+                onChange={(e) => setTipoDesconto("P")}
+                checked={tipoDesconto == "P"}
+              />
+              Percentual
+            </div>
+            <div className={styles.radioButton}>
+              <input
+                type="radio"
+                name="TipoDesconto"
+                value="V"
+                onChange={(e) => setTipoDesconto("V")}
+                checked={tipoDesconto == "V"}
+              />
+              Valor
+            </div>
+            <div>
+          </div>
+            <button className={styles.button} type="submit">
+              Aplicar
+            </button>
+          </div>
+        </form>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Quantidade</th>
+              <th>Valor Unitário</th>
+              <th>Desconto</th>
+              <th>Valor Total</th>
+            </tr>
+          </thead>
+          <tbody>{exibirProdutos()}</tbody>
+          <tfoot className={styles.footer}>
+            <tr>
+              <td colSpan={5}>
+                <p className={styles.footerLine}>Valor Total: {formatarValor(resultado)}</p>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </main>
+    </>
   );
 }
